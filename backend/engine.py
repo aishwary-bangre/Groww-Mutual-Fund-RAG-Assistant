@@ -76,6 +76,8 @@ def detect_fund_name(query: str) -> str | None:
 SYSTEM_PROMPT = (
     "You are a factual assistant for mutual fund information. "
     "Answer the user's question using ONLY the provided context. "
+    "Note: 'Parag Parikh Long Term Value Fund' is the same fund as 'Parag Parikh Flexi Cap Fund' (it was renamed). "
+    "Treat them as identical when answering.\n"
     "Rules:\n"
     "- Answer in MAXIMUM 3 sentences.\n"
     "- Cite specific numbers or facts from the context.\n"
