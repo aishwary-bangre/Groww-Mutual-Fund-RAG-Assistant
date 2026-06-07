@@ -132,8 +132,8 @@ def generate_embeddings(chunks: list[dict]) -> list[dict]:
                 if (i + 1) % 10 == 0 or (i + 1) == len(chunks):
                     print(f"  Embedded {i + 1}/{len(chunks)} chunks...")
 
-                # Base delay to stay within free-tier rate limits
-                time.sleep(1.5)
+                # Base delay to stay within free-tier rate limits (15 RPM)
+                time.sleep(4.0)
                 break  # Success — exit retry loop
 
             except Exception as e:
@@ -175,6 +175,10 @@ def build_vector_store(chunks: list[dict]) -> None:
     ids, embeddings, documents, metadatas = [], [], [], []
 
     for i, chunk in enumerate(chunks):
+        if "embedding" not in chunk or chunk["embedding"] is None:
+            print(f"  Skipping chunk {i} ({chunk['section_name']}) because embedding is missing.")
+            continue
+
         # Unique ID: fund slug + section + index
         fund_slug = chunk["metadata"].get("scheme_name", "fund").replace(" ", "_")[:30]
         chunk_id = f"{fund_slug}__{chunk['section_name']}__{i}"
