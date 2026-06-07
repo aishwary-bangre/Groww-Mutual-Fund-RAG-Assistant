@@ -143,6 +143,22 @@ def scheduler_loop(refresh_time_str: str):
         logger.error(f"Invalid REFRESH_TIME format '{refresh_time_str}', defaulting to 00:00. Error: {e}")
         target_hour, target_min = 0, 0
 
+    # Initial Staleness Check: Run immediately if data is old or missing
+    try:
+        cache_path = DATA_DIR / "cleaned_funds.json"
+        if cache_path.exists():
+            import time as _time
+            mtime = cache_path.stat().st_mtime
+            age_hours = (_time.time() - mtime) / 3600
+            if age_hours > 24:
+                logger.info(f"Database is {age_hours:.1f} hours old. Running immediate catch-up refresh.")
+                run_daily_refresh()
+        else:
+            logger.info("No existing database found. Running initial catch-up refresh.")
+            run_daily_refresh()
+    except Exception as e:
+        logger.error(f"Error during initial staleness check: {e}")
+
     while True:
         try:
             now = datetime.datetime.now()
