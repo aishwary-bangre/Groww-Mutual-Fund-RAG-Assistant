@@ -210,4 +210,23 @@ NAV, AUM, and fund returns change **every trading day**. The vector store must s
 3. **PII Interception**: Verified that personal inputs (e.g. containing a PAN) are scrubbed and refused automatically.
 4. **Out-of-Scope Detection**: Verified that unrelated queries (e.g. weather) with cosine distance > `0.45` are safely refused.
 5. **Daily Scheduler Validation**: Executed manual tests confirming that the SHA-256 cache hits and reuses 45/45 embeddings with zero API calls.
-6. **UI Responsiveness & Delivery**: Opened the website in the browser directly using [index.html](file:///d:/cursor%20projects/Groww%20Mutual%20Fund%20RAG%20Assistant/index.html) and confirmed it works seamlessly with the running Python backend.
+6. **UI Responsiveness & Delivery**: Opened the website in the browser directly using the Vercel dashboard and confirmed it works seamlessly with the running Railway backend.
+
+---
+
+### Phase 10: Production Deployment & Optimizations ✅
+**Files Modified:** [backend/app.py](file:///d:/cursor%20projects/Groww%20Mutual%20Fund%20RAG%20Assistant/backend/app.py), [backend/vector_db.py](file:///d:/cursor%20projects/Groww%20Mutual%20Fund%20RAG%20Assistant/backend/vector_db.py), [backend/engine.py](file:///d:/cursor%20projects/Groww%20Mutual%20Fund%20RAG%20Assistant/backend/engine.py), [.env](file:///d:/cursor%20projects/Groww%20Mutual%20Fund%20RAG%20Assistant/.env)
+
+1. **Production Hosting Strategy**
+   - **Backend (FastAPI):** Hosted on **Railway** with a Dockerized/Nixpack startup script exposing the port assigned by Railway.
+   - **Frontend (Vite + React):** Hosted on **Vercel** with the root directory set to the `/frontend` subfolder.
+2. **Persistent Storage (Railway Volume)**
+   - Mounted a persistent volume to the backend service card in Railway with a mount path of `/app/data`.
+   - This ensures that database files in `data/vector_store` survive restarts, redeployments, or container cycles, enabling instant startup times by bypassing rebuilds.
+3. **CORS Optimization**
+   - In `app.py`, changed the CORS middleware's `allow_credentials` to `False` while keeping `allow_origins=["*"]`. Under standard browser security rules (CORS spec), wildcards (`*`) are blocked if `allow_credentials` is `True`, causing browsers to block fetch queries. Disabling credentials fixed all fetch failures.
+4. **Rate Limit Resilience**
+   - In `vector_db.py`, changed the sleep time between embedding generations from `1.5s` to `4.0s` to strictly stay under Google Gemini's Free Tier limit of **15 requests per minute (RPM)**. 
+   - Added safety logic in `build_vector_store` to gracefully skip chunks that fail to embed instead of crashing the scheduler with a `KeyError`.
+5. **Historical Name Mapping (RAG Alignment)**
+   - In `engine.py`, modified the `SYSTEM_PROMPT` to explicitly notify the Gemini model that *Parag Parikh Long Term Value Fund* has been renamed to *Parag Parikh Flexi Cap Fund*. This prevents the strict prompt filter from refusing to answer queries containing the historical name when the database text contains the modern name.
