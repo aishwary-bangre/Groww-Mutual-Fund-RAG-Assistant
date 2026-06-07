@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>AlphaWealth AI | Groww Mutual Fund RAG Assistant</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              colors: {
+                "surface-container-highest": "#31353f",
+                "on-primary-container": "#00533c",
+                "inverse-surface": "#dfe2ef",
+                "primary": "#00D09C", // Groww Green
+                "primary-hover": "#2fe0aa",
+                "surface-elevated": "#111827",
+                "surface-container-low": "#181b25",
+                "text-secondary": "#9CA3AF",
+                "surface-container-high": "#262a34",
+                "surface-container": "#1c1f29",
+                "text-primary": "#F3F4F6",
+                "outline": "#85948c",
+                "background": "#0f131c",
+                "surface-dim": "#0f131c",
+                "on-background": "#dfe2ef",
+                "glass-border": "rgba(255, 255, 255, 0.1)",
+                "on-secondary-container": "#afb9cb",
+                "surface": "#0f131c",
+                "on-secondary": "#27313f",
+                "secondary": "#bdc7d9",
+                "surface-bright": "#353943",
+                "primary-container": "#00d09c",
+                "accent-glow": "rgba(0, 208, 156, 0.3)"
+              },
+              borderRadius: {
+                "DEFAULT": "0.25rem",
+                "lg": "0.5rem",
+                "xl": "0.75rem",
+                "full": "9999px"
+              },
+              spacing: {
+                "container-max": "1200px",
+                "sidebar-collapsed": "72px",
+                "sidebar-width": "280px",
+                "gutter": "24px",
+                "margin-mobile": "16px",
+                "stack-gap": "12px"
+              },
+              fontFamily: {
+                "headline": ["Outfit", "sans-serif"],
+                "sans": ["Inter", "sans-serif"]
+              }
+            }
+          }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #0f131c;
+            color: #dfe2ef;
+        }
+        .glass-panel {
+            background: rgba(31, 41, 55, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .accent-shadow {
+            box-shadow: 0px 4px 20px rgba(0, 208, 156, 0.2);
+        }
+        .pulse-green {
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { box-shadow: 0 0 0 0px rgba(0, 208, 156, 0.4); }
+            100% { box-shadow: 0 0 0 8px rgba(0, 208, 156, 0); }
+        }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #31353f; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #00D09C; }
+        .sidebar-item-active {
+            border-left: 4px solid #00D09C;
+            background: rgba(0, 208, 156, 0.1);
+            color: #00D09C;
+        }
+        
+        /* Loading indicator dot bounce */
+        @keyframes typing-bounce {
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-4px); }
+        }
+        .dot-bounce-1 { animation: typing-bounce 1s infinite 0.1s; }
+        .dot-bounce-2 { animation: typing-bounce 1s infinite 0.2s; }
+        .dot-bounce-3 { animation: typing-bounce 1s infinite 0.3s; }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden font-sans text-sm bg-background">
+    <!-- Sidebar Shell -->
+    <aside class="fixed left-0 top-0 h-full w-sidebar-width z-40 bg-surface-elevated border-r border-glass-border hidden lg:flex flex-col">
+        <!-- Sidebar Header -->
+        <div class="p-6">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg accent-shadow">
+                    <span class="material-symbols-outlined text-background font-bold" style="font-size: 20px;">analytics</span>
+                </div>
+                <div>
+                    <h1 class="font-headline text-lg font-bold text-primary">AlphaWealth</h1>
+                    <p class="text-[10px] text-text-secondary uppercase tracking-wider font-semibold">RAG Assistant</p>
+                </div>
+            </div>
+            <button class="w-full flex items-center justify-center gap-2 py-3 bg-primary hover:bg-primary-hover text-background font-bold rounded-xl transition-transform active:scale-95 duration-100 shadow-lg accent-shadow mb-6" id="new-chat-btn">
+                <span class="material-symbols-outlined">add</span>
+                New Chat
+            </button>
+        </div>
+        <!-- Chat History -->
+        <nav class="flex-1 overflow-y-auto px-4 space-y-2" id="chat-history-list">
+            <!-- Items injected by JS -->
+        </nav>
+        <!-- Sidebar Footer -->
+        <div class="p-4 border-t border-glass-border space-y-1">
+            <button class="w-full flex items-center gap-3 px-4 py-3 text-text-secondary hover:bg-surface-container-high transition-colors rounded-lg group">
+                <span class="material-symbols-outlined">help_outline</span>
+                <span class="font-semibold text-xs uppercase tracking-wider">Support</span>
+            </button>
+            <button class="w-full flex items-center gap-3 px-4 py-3 text-text-secondary hover:bg-surface-container-high transition-colors rounded-lg group">
+                <span class="material-symbols-outlined">archive</span>
+                <span class="font-semibold text-xs uppercase tracking-wider">Archive</span>
+            </button>
+            <button class="w-full flex items-center gap-3 px-4 py-3 text-text-secondary hover:bg-surface-container-high transition-colors rounded-lg group">
+                <span class="material-symbols-outlined">settings</span>
+                <span class="font-semibold text-xs uppercase tracking-wider">Settings</span>
+            </button>
+        </div>
+    </aside>
+
+    <!-- Main Content Canvas -->
+    <main class="flex-1 lg:ml-sidebar-width h-full flex flex-col relative bg-background">
+        <!-- Top App Bar -->
+        <header class="h-16 flex items-center justify-between px-gutter border-b border-glass-border bg-surface/80 backdrop-blur-xl sticky top-0 z-30">
+            <div class="flex items-center gap-4">
+                <button class="lg:hidden p-2 text-text-secondary" id="mobile-menu-btn">
+                    <span class="material-symbols-outlined">menu</span>
+                </button>
+                <div class="flex items-center gap-2">
+                    <h2 class="font-headline text-lg font-bold text-primary">Groww RAG Assistant</h2>
+                    <div class="w-2 h-2 rounded-full bg-primary pulse-green ml-1" id="status-dot"></div>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:flex bg-surface-container-low border border-glass-border px-3 py-1.5 rounded-full items-center gap-2">
+                    <span class="w-2 h-2 rounded-full bg-primary" id="connection-indicator"></span>
+                    <span class="text-[10px] font-bold text-text-secondary uppercase tracking-widest" id="connection-status-text">Checking</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button class="text-text-secondary hover:text-primary transition-colors">
+                        <span class="material-symbols-outlined">notifications</span>
+                    </button>
+                    <div class="w-8 h-8 rounded-full bg-surface-container-highest border border-glass-border overflow-hidden flex items-center justify-center text-text-secondary">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Message Viewport -->
+        <div class="flex-1 overflow-y-auto px-gutter py-8 space-y-stack-gap" id="message-container">
+            <!-- Welcome State (Empty) -->
+            <div class="max-w-[800px] mx-auto mt-12 flex flex-col items-center text-center" id="welcome-view">
+                <div class="mb-8 p-6 rounded-full bg-primary/5 border border-primary/20 accent-shadow">
+                    <span class="material-symbols-outlined text-6xl text-primary" style="font-size: 48px;">monitoring</span>
+                </div>
+                <h3 class="font-headline text-3xl text-text-primary mb-2 font-bold">How can I help with your Groww Portfolio?</h3>
+                <p class="text-text-secondary mb-12 max-w-xl font-medium leading-relaxed">I'm your AI financial companion, specializing in Mutual Fund insights directly from the latest Groww market data.</p>
+                
+                <!-- Disclaimer -->
+                <div class="mb-12 w-full p-4 rounded-xl border border-amber-500/30 bg-amber-500/5 flex items-start gap-4 text-left shadow-sm">
+                    <span class="material-symbols-outlined text-amber-500 shrink-0">info</span>
+                    <div>
+                        <p class="font-headline text-xs font-bold text-amber-500 uppercase tracking-widest mb-1">Disclaimer</p>
+                        <p class="text-xs text-text-secondary opacity-90 leading-relaxed">Educational purposes only. Not SEBI-registered advice. Mutual fund investments are subject to market risks.</p>
+                    </div>
+                </div>
+                
+                <!-- Suggestions -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+                    <button class="glass-panel p-6 rounded-2xl text-left hover:border-primary/50 transition-all group flex flex-col justify-between min-h-[140px]" onclick="sendSuggestion('What is the exit load of HDFC Mid Cap Fund?')">
+                        <p class="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">What is the exit load of HDFC Mid Cap Fund?</p>
+                        <span class="material-symbols-outlined mt-4 text-text-secondary group-hover:text-primary self-end" style="font-size: 20px;">arrow_forward</span>
+                    </button>
+                    <button class="glass-panel p-6 rounded-2xl text-left hover:border-primary/50 transition-all group flex flex-col justify-between min-h-[140px]" onclick="sendSuggestion('Who manages Parag Parikh Long Term Value Fund?')">
+                        <p class="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">Who manages Parag Parikh Long Term Value Fund?</p>
+                        <span class="material-symbols-outlined mt-4 text-text-secondary group-hover:text-primary self-end" style="font-size: 20px;">arrow_forward</span>
+                    </button>
+                    <button class="glass-panel p-6 rounded-2xl text-left hover:border-primary/50 transition-all group flex flex-col justify-between min-h-[140px]" onclick="sendSuggestion('What is the minimum SIP for Motilal Oswal?')">
+                        <p class="text-sm font-semibold text-text-primary group-hover:text-primary transition-colors">What is the minimum SIP for Motilal Oswal?</p>
+                        <span class="material-symbols-outlined mt-4 text-text-secondary group-hover:text-primary self-end" style="font-size: 20px;">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Active Chat Content Area (hidden by default) -->
+            <div class="max-w-[800px] mx-auto space-y-6 hidden pb-32" id="chat-messages">
+                <!-- Messages will be injected here -->
+            </div>
+        </div>
+
+        <!-- Input Area Shell -->
+        <div class="absolute bottom-0 left-0 w-full p-gutter bg-gradient-to-t from-background via-background/90 to-transparent">
+            <div class="max-w-[800px] mx-auto relative group">
+                <div class="glass-panel rounded-2xl flex items-end gap-2 p-3 focus-within:border-primary transition-all shadow-2xl">
+                    <textarea class="w-full bg-transparent border-none focus:ring-0 text-text-primary placeholder:text-text-secondary resize-none py-2 px-2 max-h-48 outline-none border-0 text-sm focus:outline-none" id="chat-input" placeholder="Ask about funds, expense ratios, or fund managers..." rows="1" style="scrollbar-width: none;"></textarea>
+                    <button class="bg-primary hover:brightness-110 active:scale-90 transition-all p-3 rounded-xl flex items-center justify-center text-background shadow-lg accent-shadow disabled:opacity-40" id="send-btn">
+                        <span class="material-symbols-outlined font-bold">send</span>
+                    </button>
+                </div>
+                <p class="text-[10px] text-center mt-3 text-text-secondary uppercase tracking-widest opacity-60 font-semibold">AI model may produce inaccuracies. Cross-verify with official offer documents.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Script for Logic -->
+    <script>
+        const API_URL = 'http://127.0.0.1:8000';
+        const chatInput = document.getElementById('chat-input');
+        const sendBtn = document.getElementById('send-btn');
+        const chatMessages = document.getElementById('chat-messages');
+        const welcomeView = document.getElementById('welcome-view');
+        const messageContainer = document.getElementById('message-container');
+        const historyList = document.getElementById('chat-history-list');
+        const newChatBtn = document.getElementById('new-chat-btn');
+        const statusDot = document.getElementById('status-dot');
+        const connectionIndicator = document.getElementById('connection-indicator');
+        const connectionStatusText = document.getElementById('connection-status-text');
+
+        let currentSessionId = null;
+        let sessions = JSON.parse(localStorage.getItem('groww_rag_sessions')) || [];
+        let isGenerating = false;
+
+        // Auto-grow textarea
+        chatInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+
+        // Initialize App
+        async function init() {
+            renderHistory();
+            await checkHealth();
+            if (sessions.length > 0) {
+                loadSession(sessions[0].id);
+            }
+        }
+
+        async function checkHealth() {
+            try {
+                const res = await fetch(`${API_URL}/health`);
+                const data = await res.json();
+                if (data.status === 'healthy') {
+                    statusDot.className = 'w-2 h-2 rounded-full bg-primary pulse-green ml-1';
+                    connectionIndicator.className = 'w-2 h-2 rounded-full bg-primary';
+                    connectionStatusText.innerText = 'Connected';
+                    connectionStatusText.className = 'text-[10px] font-bold text-text-secondary uppercase tracking-widest';
+                }
+            } catch (err) {
+                console.error('API Server Health Ping Failed:', err);
+                statusDot.className = 'w-2 h-2 rounded-full bg-red-500 ml-1';
+                connectionIndicator.className = 'w-2 h-2 rounded-full bg-red-500';
+                connectionStatusText.innerText = 'Disconnected';
+                connectionStatusText.className = 'text-[10px] font-bold text-red-400 uppercase tracking-widest';
+            }
+        }
+
+        function createSession(initialMessage = null) {
+            const id = Date.now().toString();
+            const title = initialMessage ? (initialMessage.length > 30 ? initialMessage.substring(0, 30) + '...' : initialMessage) : 'New Analysis Session';
+            const newSession = { id, title, messages: [] };
+            sessions.unshift(newSession);
+            saveToLocal();
+            renderHistory();
+            loadSession(id);
+            return id;
+        }
+
+        function saveToLocal() {
+            localStorage.setItem('groww_rag_sessions', JSON.stringify(sessions));
+        }
+
+        function renderHistory() {
+            historyList.innerHTML = '';
+            sessions.forEach(session => {
+                const div = document.createElement('div');
+                div.className = `group flex items-center gap-3 px-4 py-3 rounded-xl transition-all cursor-pointer ${currentSessionId === session.id ? 'sidebar-item-active' : 'text-text-secondary hover:bg-surface-container-high'}`;
+                div.onclick = () => loadSession(session.id);
+                
+                div.innerHTML = `
+                    <span class="material-symbols-outlined text-[20px]">chat_bubble</span>
+                    <span class="flex-1 truncate font-semibold text-xs tracking-wide">${session.title}</span>
+                    <div class="hidden group-hover:flex items-center gap-1">
+                        <button onclick="event.stopPropagation(); deleteSession('${session.id}')" class="hover:text-red-400 transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                    </div>
+                `;
+                historyList.appendChild(div);
+            });
+        }
+
+        function loadSession(id) {
+            currentSessionId = id;
+            const session = sessions.find(s => s.id === id);
+            
+            welcomeView.classList.add('hidden');
+            chatMessages.classList.remove('hidden');
+            chatMessages.innerHTML = '';
+            
+            session.messages.forEach(msg => appendMessageUI(msg.role, msg.content, msg.citation_url, msg.last_updated));
+            renderHistory();
+            scrollToBottom();
+        }
+
+        function deleteSession(id) {
+            sessions = sessions.filter(s => s.id !== id);
+            saveToLocal();
+            if (currentSessionId === id) {
+                currentSessionId = null;
+                welcomeView.classList.remove('hidden');
+                chatMessages.classList.add('hidden');
+            }
+            renderHistory();
+        }
+
+        function scrollToBottom() {
+            messageContainer.scrollTo({ top: messageContainer.scrollHeight, behavior: 'smooth' });
+        }
+
+        function formatContent(text) {
+            if (!text) return '';
+            const lines = text.split('\n');
+            let resultHtml = '';
+            lines.forEach(line => {
+                const isBullet = line.trim().startsWith('-') || line.trim().startsWith('*');
+                let cleanLine = isBullet ? line.trim().substring(1).trim() : line;
+                
+                // Bold formatting
+                cleanLine = cleanLine.replace(/\*\*(.*?)\*\*/g, '<strong class="text-primary font-bold">$1</strong>');
+                
+                if (isBullet) {
+                    resultHtml += `<li class="ml-5 list-disc leading-relaxed text-text-primary mb-1">${cleanLine}</li>`;
+                } else {
+                    resultHtml += `<p class="leading-relaxed text-text-primary mb-2 min-h-[1.5rem]">${cleanLine}</p>`;
+                }
+            });
+            return resultHtml;
+        }
+
+        function appendMessageUI(role, content, citationUrl = null, lastUpdated = null) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            if (role === 'user') {
+                wrapper.innerHTML = `
+                    <div class="max-w-[85%] bg-primary/10 border border-primary/30 p-4 rounded-2xl rounded-tr-sm flex items-center gap-3">
+                        <div class="flex-grow">
+                            <p class="text-primary font-medium leading-relaxed whitespace-pre-wrap">${content}</p>
+                        </div>
+                        <div class="w-6 h-6 rounded-full bg-primary/20 border border-primary/40 flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-xs text-primary" style="font-size: 14px;">person</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                let footerHtml = '';
+                if (citationUrl) {
+                    let domain = 'groww.in/mutual-funds';
+                    try {
+                        const parsed = new URL(citationUrl);
+                        domain = parsed.hostname + parsed.pathname;
+                    } catch {}
+                    
+                    footerHtml = `
+                        <div class="flex flex-wrap items-center gap-3 pt-3 border-t border-glass-border">
+                            <a href="${citationUrl}" target="_blank" class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-background/50 border border-glass-border text-xs text-text-secondary hover:text-primary transition-colors">
+                                <span class="material-symbols-outlined text-[14px]">link</span>
+                                ${domain}
+                            </a>
+                            ${lastUpdated ? `<span class="text-[10px] text-text-secondary uppercase tracking-widest opacity-60">Last Scraped: ${lastUpdated}</span>` : ''}
+                        </div>
+                    `;
+                }
+                
+                wrapper.innerHTML = `
+                    <div class="max-w-[90%] glass-panel p-5 rounded-2xl rounded-tl-sm w-full">
+                        <div class="flex items-center gap-2 mb-3">
+                             <span class="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+                             <span class="text-xs font-bold text-primary tracking-wider uppercase font-headline">ASSISTANT RESPONSE</span>
+                        </div>
+                        <div class="text-text-primary leading-relaxed mb-4 text-sm">${formatContent(content)}</div>
+                        ${footerHtml}
+                    </div>
+                `;
+            }
+            chatMessages.appendChild(wrapper);
+        }
+
+        function appendLoaderUI() {
+            const wrapper = document.createElement('div');
+            const id = 'loader-' + Date.now();
+            wrapper.id = id;
+            wrapper.className = 'flex justify-start';
+            wrapper.innerHTML = `
+                <div class="max-w-[90%] glass-panel p-5 rounded-2xl rounded-tl-sm w-full">
+                    <div class="flex items-center gap-2 mb-3">
+                         <span class="material-symbols-outlined text-primary text-[18px]">auto_awesome</span>
+                         <span class="text-xs font-bold text-primary tracking-wider uppercase font-headline">ASSISTANT RESPONSE</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 py-2">
+                        <span class="text-text-secondary italic text-xs mr-1">Generating answer...</span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary dot-bounce-1"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary dot-bounce-2"></span>
+                        <span class="w-1.5 h-1.5 rounded-full bg-primary dot-bounce-3"></span>
+                    </div>
+                </div>
+            `;
+            chatMessages.appendChild(wrapper);
+            return id;
+        }
+
+        function removeLoaderUI(id) {
+            const loader = document.getElementById(id);
+            if (loader) {
+                loader.remove();
+            }
+        }
+
+        async function handleSend() {
+            const content = chatInput.value.trim();
+            if (!content || isGenerating) return;
+
+            isGenerating = true;
+            sendBtn.disabled = true;
+
+            if (!currentSessionId) {
+                createSession(content);
+            }
+
+            const session = sessions.find(s => s.id === currentSessionId);
+            const userMsg = { role: 'user', content };
+            session.messages.push(userMsg);
+            
+            if (session.messages.length === 1) {
+                session.title = content.substring(0, 30) + '...';
+            }
+
+            appendMessageUI('user', content);
+            chatInput.value = '';
+            chatInput.style.height = 'auto';
+            scrollToBottom();
+
+            const loaderId = appendLoaderUI();
+            scrollToBottom();
+
+            try {
+                const response = await fetch(`${API_URL}/chat`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ query: content })
+                });
+
+                removeLoaderUI(loaderId);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const aiMsg = { 
+                    role: 'assistant', 
+                    content: data.answer,
+                    citation_url: data.citation_url,
+                    last_updated: data.last_updated,
+                    intent: data.intent
+                };
+                session.messages.push(aiMsg);
+                appendMessageUI('assistant', data.answer, data.citation_url, data.last_updated);
+            } catch (err) {
+                console.error('Error fetching chat response:', err);
+                removeLoaderUI(loaderId);
+                const errText = `⚠️ Failed to get a response from the backend. Please check that the Python server is running on http://127.0.0.1:8000 and try again.`;
+                const aiMsg = { role: 'assistant', content: errText };
+                session.messages.push(aiMsg);
+                appendMessageUI('assistant', errText);
+            } finally {
+                isGenerating = false;
+                sendBtn.disabled = false;
+                saveToLocal();
+                renderHistory();
+                scrollToBottom();
+            }
+        }
+
+        function sendSuggestion(text) {
+            chatInput.value = text;
+            handleSend();
+        }
+
+        // Event Listeners
+        sendBtn.addEventListener('click', handleSend);
+        chatInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+            }
+        });
+
+        newChatBtn.addEventListener('click', () => {
+            currentSessionId = null;
+            welcomeView.classList.remove('hidden');
+            chatMessages.classList.add('hidden');
+            chatMessages.innerHTML = '';
+            chatInput.value = '';
+            renderHistory();
+        });
+
+        // Mobile drawer toggle
+        const sidebar = document.querySelector('aside');
+        const menuBtn = document.getElementById('mobile-menu-btn');
+        if (menuBtn) {
+            menuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('hidden');
+                sidebar.classList.toggle('flex');
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>

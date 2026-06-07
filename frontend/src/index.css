@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #0f131c;
+    color: #dfe2ef;
+    font-family: 'Inter', sans-serif;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Outfit', sans-serif;
+  }
+}
+
+/* Glassmorphism Styles */
+.glass-panel {
+  background: rgba(31, 41, 55, 0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.accent-shadow {
+  box-shadow: 0px 4px 20px rgba(0, 208, 156, 0.15);
+}
+
+/* Green status pulse */
+.pulse-green {
+  animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+  0% {
+    box-shadow: 0 0 0 0px rgba(0, 208, 156, 0.4);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(0, 208, 156, 0);
+  }
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #262a34;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #00D09C;
+}
+
+/* Typing indicator dot bounce animation */
+@keyframes typing-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.dot-bounce-1 {
+  animation: typing-bounce 1s infinite 0.1s;
+}
+.dot-bounce-2 {
+  animation: typing-bounce 1s infinite 0.2s;
+}
+.dot-bounce-3 {
+  animation: typing-bounce 1s infinite 0.3s;
+}
