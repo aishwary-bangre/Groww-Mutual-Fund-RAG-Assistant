@@ -268,10 +268,3 @@ def load_all_documents() -> list[dict]:
     return all_documents
 
 
-if __name__ == "__main__":
-    docs = load_all_documents()
-    if docs:
-        print("\n" + "="*60)
-        print("SAMPLE OUTPUT — First Fund:")
-        print("="*60)
-        print(docs[0]["cleaned_text"])

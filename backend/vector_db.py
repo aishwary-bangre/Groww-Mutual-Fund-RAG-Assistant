@@ -268,23 +268,4 @@ def query_vector_db(query_text: str, top_k: int = 3, fund_filter: str | None = N
     return retrieved
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Test: Run chunking on the cached cleaned_funds.json
-# ──────────────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    with open("data/cleaned_funds.json", encoding="utf-8") as f:
-        documents = json.load(f)
 
-    print(f"Loaded {len(documents)} fund documents.\n")
-    print("Chunking by sections...")
-    all_chunks = chunk_all_documents(documents)
-
-    print(f"\nTotal chunks produced: {len(all_chunks)}")
-    print("\n--- Sample Chunks ---")
-
-    # Show the first 2 chunks from the first fund
-    for chunk in all_chunks[:2]:
-        print(f"\n[Section: {chunk['section_name']}]")
-        print(f"[Fund: {chunk['metadata']['scheme_name']}]")
-        print(chunk["text"][:400])
-        print("...")

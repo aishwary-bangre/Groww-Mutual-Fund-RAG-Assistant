@@ -185,41 +185,4 @@ def build_refusal(reason: str = "advisory") -> dict:
     }
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Self-test
-# ──────────────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    test_queries = [
-        ("What is the exit load of HDFC Mid Cap Fund?",        "FACTUAL"),
-        ("Should I invest in Parag Parikh Flexi Cap Fund?",    "ADVISORY"),
-        ("Which fund is better, HDFC or Motilal?",             "ADVISORY"),
-        ("What is the minimum SIP amount for HDFC Equity?",    "FACTUAL"),
-        ("Tell me about the benchmark of HDFC Mid Cap Fund",   "FACTUAL"),
-        ("Is HDFC Silver ETF a good investment?",              "ADVISORY"),
-        ("What is the AUM of Parag Parikh Long Term Value?",   "FACTUAL"),
-    ]
 
-    pii_queries = [
-        "My PAN is ABCDE1234F, what should I invest in?",
-        "My phone is 9876543210 and I want to buy a fund",
-        "What is the NAV today?",  # Clean
-    ]
-
-    print("=== INTENT CLASSIFICATION ===")
-    all_pass = True
-    for query, expected in test_queries:
-        result = classify_intent(query)
-        status = "PASS" if result["intent"] == expected else "FAIL"
-        if result["intent"] != expected:
-            all_pass = False
-        print(f"[{status}] [{result['intent']}] {query}")
-
-    print(f"\nAll correct: {all_pass}")
-
-    print("\n=== PII DETECTION ===")
-    for query in pii_queries:
-        result = sanitize_pii(query)
-        status = "[BLOCKED]" if not result["is_clean"] else "[CLEAN]  "
-        print(f"{status} {query[:60]}")
-        if not result["is_clean"]:
-            print(f"  Detected: {result['detected']}")

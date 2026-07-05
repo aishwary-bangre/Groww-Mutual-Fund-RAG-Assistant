@@ -188,37 +188,4 @@ def answer_query(query: str) -> dict:
     }
 
 
-# ──────────────────────────────────────────────────────────────────────────────
-# Self-test
-# ──────────────────────────────────────────────────────────────────────────────
-if __name__ == "__main__":
-    import sys
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
 
-    test_cases = [
-        # (query, expected_intent)
-        ("What is the exit load of HDFC Mid Cap Fund?",        "FACTUAL"),
-        ("Who manages Parag Parikh Long Term Value Fund?",      "FACTUAL"),
-        ("What is the minimum SIP for Motilal Oswal?",         "FACTUAL"),
-        ("Should I invest in HDFC Equity Fund?",               "ADVISORY"),
-        ("My PAN is ABCDE1234F, which fund should I buy?",     "BLOCKED_PII"),
-        ("What is the weather like today?",                     "OUT_OF_SCOPE"),
-    ]
-
-    print("=" * 65)
-    print("PHASE 5 ENGINE SELF-TEST")
-    print("=" * 65)
-
-    for query, expected in test_cases:
-        print(f"\nQ: {query}")
-        result = answer_query(query)
-        intent = result["intent"]
-        status = "PASS" if intent == expected else "FAIL"
-        print(f"[{status}] Intent: {intent} (expected: {expected})")
-        if intent == "FACTUAL":
-            print(f"  Answer: {result['answer'][:150]}...")
-            print(f"  Source: {result['citation_url']}")
-            print(f"  Updated: {result['last_updated']}")
-        else:
-            print(f"  Response: {result['answer'][:120]}...")
