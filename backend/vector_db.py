@@ -50,26 +50,18 @@ def chunk_by_sections(cleaned_text: str, scheme_metadata: dict) -> list[dict]:
 
         if section_name == "FUND IDENTITY":
             identity_block = section
-            # Include the identity block as its own chunk too
-            chunks.append({
-                "text": section,
-                "section_name": section_name,
-                "metadata": {
-                    **scheme_metadata,
-                    "section": section_name,
-                }
-            })
+            chunk_text = section
         else:
-            # Prepend identity context to every other section
             chunk_text = f"{identity_block}\n\n{section}" if identity_block else section
-            chunks.append({
-                "text": chunk_text,
-                "section_name": section_name,
-                "metadata": {
-                    **scheme_metadata,
-                    "section": section_name,
-                }
-            })
+
+        chunks.append({
+            "text": chunk_text,
+            "section_name": section_name,
+            "metadata": {
+                **scheme_metadata,
+                "section": section_name,
+            }
+        })
 
     return chunks
 
@@ -184,14 +176,10 @@ def build_vector_store(chunks: list[dict]) -> None:
         chunk_id = f"{fund_slug}__{chunk['section_name']}__{i}"
 
         # Sanitize metadata: ChromaDB only allows str, int, float, bool
-        clean_meta = {}
-        for k, v in chunk["metadata"].items():
-            if v is None:
-                clean_meta[k] = ""
-            elif isinstance(v, (str, int, float, bool)):
-                clean_meta[k] = v
-            else:
-                clean_meta[k] = str(v)
+        clean_meta = {
+            k: ("" if v is None else v if isinstance(v, (str, int, float, bool)) else str(v))
+            for k, v in chunk["metadata"].items()
+        }
 
         ids.append(chunk_id)
         embeddings.append(chunk["embedding"])
